@@ -21,3 +21,5 @@ A linux vagrant environment with some things dev-friendly things installed, most
 1. `./vmup.sh`.
 1. The first time you launch tmux, press prefix+I to install TPM plugins. The
    default prefix is ctrl+space.
+
+_taken from [masters-of-cats/linux-playground](https://github.com/masters-of-cats/linux-playground)_
