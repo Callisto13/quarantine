@@ -1,7 +1,6 @@
 [core]
     pager = less -FXRS -x2
     editor = nvim
-    excludesfile = /Users/pivotal/.gitignore_global
 [alias]
     st = status
     di = diff
@@ -51,6 +50,3 @@
 [difftool "sourcetree"]
     cmd = opendiff \"$LOCAL\" \"$REMOTE\"
     path =
-[mergetool "sourcetree"]
-    cmd = /opt/homebrew-cask/Caskroom/sourcetree/2.0.5.6/SourceTree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
-    trustExitCode = true

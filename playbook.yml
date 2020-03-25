@@ -46,6 +46,8 @@
       - wget
       - btrfs-progs
       - libbtrfs-dev
+      - direnv
+      - ripgrep
 
   - name: install neovim pip package
     pip: name=neovim executable=/usr/bin/pip
@@ -62,6 +64,8 @@
     - {src: config/tmux.conf, dst: ~/.tmux.conf}
     - {src: config/gitconfig, dst: ~/.gitconfig}
     - {src: config/vimrc.local.plugins, dst: ~/.vimrc.local.plugins}
+    - {src: config/vimrc, dst: ~/.vimrc}
+    - {src: config/bash_aliases, dst: ~/.bash_aliases}
 
   - name: copy systemwide config files
     become: true
@@ -69,7 +73,6 @@
     copy: src={{item.src}} dest={{item.dst}} mode=0664 force=true
     with_items:
     - {src: config/golang.sh, dst: /etc/profile.d/golang.sh}
-    - {src: config/utils.sh, dst: /etc/profile.d/utils.sh}
 
   - name: get TPM
     git:
@@ -77,7 +80,7 @@
       dest: ~/.tmux/plugins/tpm
 
   - name: download go
-    get_url: url=https://dl.google.com/go/go1.12.4.linux-amd64.tar.gz dest={{downloads_dir}}/go.tar.gz
+    get_url: url=https://dl.google.com/go/go1.14.linux-amd64.tar.gz dest={{downloads_dir}}/go.tar.gz
 
   - name: extract go
     become: true
@@ -85,17 +88,60 @@
     unarchive: copy=no src={{downloads_dir}}/go.tar.gz dest=/usr/local creates=/usr/local/go
 
   - name: clone vim config
-    git: repo=https://github.com/masters-of-cats/a-new-hope dest=~/.config/nvim
+    git:
+      repo: https://github.com/masters-of-cats/a-new-hope
+      dest: ~/.config/nvim
+      force: yes
+
+  - name: add custom vim plugins
+    lineinfile:
+      path: ~/.config/nvim/init.vim
+      insertafter: 'plugged'
+      line: 'silent source ~/.vimrc.local.plugins'
+
+  - name: add custom vim config
+    lineinfile:
+      path: ~/.config/nvim/init.vim
+      insertafter: EOF
+      line: 'silent source ~/.vimrc'
+
+  - name: remove stupid vim mappings
+    lineinfile:
+      path: ~/.config/nvim/init.vim
+      state: absent
+      regexp: ';;'
+
+  - name: install vim plugins and binaries
+    command: nvim --headless +PlugInstall +PlugUpdate +GoUpdateBinaries +qall
+
+  - name: update remote plugins
+    command: nvim --headless +UpdateRemotePlugins +qall
 
   - name: install docker
     shell: curl -sSL https://get.docker.com/ | sh
+    args:
+      warn: no
 
-  - name: check if test rootfs exists
-    stat: path=/tmp/test/rootfs
-    register: rootfs
+  - name: change docker socket owner
+    file:
+      path: /var/run/docker.sock
+      owner: vagrant
+      group: vagrant
 
-  - name: extract test rootfs
+  - name: get kind
+    command: /usr/local/go/bin/go get sigs.k8s.io/kind
+
+  - name: get kubectl
     become: true
     become_method: sudo
-    shell: mkdir -p /tmp/test/rootfs && docker run -d busybox echo hi | xargs docker export | tar -x -C /tmp/test/rootfs
-    when: not rootfs.stat.isdir is defined or not rootfs.stat.isdir
+    command: curl -L https://storage.googleapis.com/kubernetes-release/release/v1.17.0/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
+    args:
+      warn: no
+
+  - name: chmod kubectl
+    become: true
+    become_method: sudo
+    file:
+      path: /usr/local/bin/kubectl
+      mode: 0755
+
