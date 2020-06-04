@@ -5,7 +5,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = 'bento/ubuntu-19.10'
 
   config.vm.provider "virtualbox" do |vb|
-    vb.name = 'linux-playground'
+    vb.name = 'quarantine'
 
     require 'etc'
     num_cpus = Etc.nprocessors

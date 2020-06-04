@@ -123,6 +123,8 @@
       warn: no
 
   - name: change docker socket owner
+    become: true
+    become_method: sudo
     file:
       path: /var/run/docker.sock
       owner: vagrant
